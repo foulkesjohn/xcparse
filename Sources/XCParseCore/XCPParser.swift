@@ -9,7 +9,6 @@
 import Basic
 import Foundation
 import SPMUtility
-import XCParseCore
 
 let xcparseCurrentVersion = Version(2, 1, 0)
 
@@ -62,12 +61,17 @@ extension String {
     }
 }
 
-struct XCResultToolCompatability {
+public struct XCResultToolCompatability {
     var supportsExport: Bool = true
     var supportsUnicodeExportPaths: Bool = true // See https://github.com/ChargePoint/xcparse/issues/30
+    public init(supportsExport: Bool = true,
+                supportsUnicodeExportPaths: Bool = true) {
+      self.supportsExport = supportsExport
+      self.supportsUnicodeExportPaths = supportsUnicodeExportPaths
+    }
 }
 
-struct AttachmentExportOptions {
+public struct AttachmentExportOptions {
     var addTestScreenshotsDirectory: Bool = false
     var divideByTargetModel: Bool = false
     var divideByTargetOS: Bool = false
@@ -75,6 +79,28 @@ struct AttachmentExportOptions {
     var divideByLanguage: Bool = false
     var divideByRegion: Bool = false
     var divideByTest: Bool = false
+  
+    public init(addTestScreenshotsDirectory: Bool = false,
+                divideByTargetModel: Bool = false,
+                divideByTargetOS: Bool = false,
+                divideByTestPlanConfig: Bool = false,
+                divideByLanguage: Bool = false,
+                divideByRegion: Bool = false,
+                divideByTest: Bool = false,
+                xcresulttoolCompatability: XCResultToolCompatability = XCResultToolCompatability(),
+                attachmentFilter: @escaping (ActionTestAttachment) -> Bool = { _ in
+                    return true
+                }) {
+      self.addTestScreenshotsDirectory = addTestScreenshotsDirectory
+      self.divideByTargetModel = divideByTargetModel
+      self.divideByTargetOS = divideByTargetOS
+      self.divideByTestPlanConfig = divideByTestPlanConfig
+      self.divideByLanguage = divideByLanguage
+      self.divideByRegion = divideByRegion
+      self.divideByTest = divideByTest
+      self.xcresulttoolCompatability = xcresulttoolCompatability
+      self.attachmentFilter = attachmentFilter
+    }
 
     var xcresulttoolCompatability = XCResultToolCompatability()
 
@@ -186,7 +212,7 @@ struct AttachmentExportOptions {
     }
 }
 
-class XCPParser {
+public class XCPParser {
     var xcparseLatestVersion = xcparseCurrentVersion
     
     var console = Console()
@@ -194,6 +220,10 @@ class XCPParser {
 
     // MARK: -
     // MARK: Parsing Actions
+  
+    public init() {
+      
+    }
 
     func checkXCResultToolCompatability(destination: String) -> XCResultToolCompatability {
         var compatability = XCResultToolCompatability()
@@ -222,7 +252,7 @@ class XCPParser {
         return compatability
     }
 
-    func extractAttachments(xcresultPath: String, destination: String, options: AttachmentExportOptions = AttachmentExportOptions()) throws {
+    public func extractAttachments(xcresultPath: String, destination: String, options: AttachmentExportOptions = AttachmentExportOptions()) throws {
         // Check the xcresulttool version is compatible to export the request
         if options.xcresulttoolCompatability.supportsExport != true {
             return
@@ -318,19 +348,19 @@ class XCPParser {
         if attachments.count <= 0 {
             return
         }
+ 
+//        let header = (displayName != "") ? "Exporting \"\(displayName)\" Attachments" : "Exporting Attachments"
+//        let progressBar = PercentProgressAnimation(stream: stdoutStream, header: header)
+//        progressBar.update(step: 0, total: attachments.count, text: "")
 
-        let header = (displayName != "") ? "Exporting \"\(displayName)\" Attachments" : "Exporting Attachments"
-        let progressBar = PercentProgressAnimation(stream: stdoutStream, header: header)
-        progressBar.update(step: 0, total: attachments.count, text: "")
-
-        for (index, attachment) in attachments.enumerated() {
-            progressBar.update(step: index, total: attachments.count, text: "Extracting \"\(attachment.filename ?? "Unknown Filename")\"")
+        for (_, attachment) in attachments.enumerated() {
+//            progressBar.update(step: index, total: attachments.count, text: "Extracting \"\(attachment.filename ?? "Unknown Filename")\"")
 
             XCResultToolCommand.Export(withXCResult: xcresult, attachment: attachment, outputPath: screenshotDirectoryURL.path).run()
         }
 
-        progressBar.update(step: attachments.count, total: attachments.count, text: "🎊 Export complete! 🎊")
-        progressBar.complete(success: true)
+//        progressBar.update(step: attachments.count, total: attachments.count, text: "🎊 Export complete! 🎊")
+//        progressBar.complete(success: true)
     }
     
     func extractCoverage(xcresultPath : String, destination : String) throws {
